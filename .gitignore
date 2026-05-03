@@ -42,6 +42,9 @@ lerna-debug.log*
 .env.production.local
 .env.local
 
+# Swagger
+openapi-spec.json
+
 # temp directory
 .temp
 .tmp
