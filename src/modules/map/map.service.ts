@@ -13,12 +13,26 @@ import type {
   Polygon,
 } from 'geojson';
 
+export interface PriceMappingItem {
+  code_tfv: string;
+  bd_foret_label: string;
+  tfv_g11_label: string;
+  fbf_essence: string;
+  price_eur_m3: number;
+  note?: string;
+}
+
+export interface ForestClass {
+  code: string;
+  label: string;
+}
+
 @Injectable()
 export class MapService {
-  private priceMapping: any[] = [];
+  private priceMapping: PriceMappingItem[] = [];
   private tileCache = new Map<string, Buffer>();
-  private forestClassesCache: any = null;
-  private departmentsCoverageCache: any = null;
+  private forestClassesCache: ForestClass[] | null = null;
+  private departmentsCoverageCache: FeatureCollection | null = null;
 
   constructor(
     @InjectDataSource()
@@ -30,7 +44,7 @@ export class MapService {
 
   private loadPriceMapping() {
     try {
-      const filePath = path.join(__dirname, '..', 'data', 'bd_foret_price_mapping_2024.json');
+      const filePath = path.join(__dirname, '..', '..', 'data', 'bd_foret_price_mapping_2024.json');
       if (fs.existsSync(filePath)) {
         this.priceMapping = JSON.parse(fs.readFileSync(filePath, 'utf8'));
       }
@@ -202,7 +216,7 @@ export class MapService {
 
     return {
       type: 'FeatureCollection',
-      features: rows.map((row: any) => ({
+      features: rows.map((row: Record<string, any>) => ({
         type: 'Feature',
         geometry: JSON.parse(row.geom),
         properties: {
@@ -250,7 +264,7 @@ export class MapService {
 
     return {
       type: 'FeatureCollection',
-      features: rows.map((row: any) => ({
+      features: rows.map((row: Record<string, any>) => ({
         type: 'Feature',
         geometry: JSON.parse(row.geom),
         properties: {
@@ -278,7 +292,7 @@ export class MapService {
     
     this.departmentsCoverageCache = {
       type: 'FeatureCollection',
-      features: rows.map((row: any) => ({
+      features: rows.map((row: Record<string, any>) => ({
         type: 'Feature',
         geometry: JSON.parse(row.geom),
         properties: {
@@ -307,7 +321,7 @@ export class MapService {
 
     const rows = await this.dataSource.query(sql);
 
-    this.forestClassesCache = rows.map((row: any) => ({
+    this.forestClassesCache = rows.map((row: Record<string, any>) => ({
         code: String(row.tfv_g11),
         label: row.tfv_label || `Group ${row.tfv_g11}`,
     }));
@@ -413,7 +427,7 @@ export class MapService {
         ? Number(areaRows[0].hectares)
         : 0;
 
-    const parcelIds = parcelRows.map((row: any) => row.parcel_id);
+    const parcelIds = parcelRows.map((row: Record<string, any>) => row.parcel_id);
     
     // Total forest area within the polygon (may be less than areaHa if polygon includes non-forest)
     let totalForestAreaHa = 0;
@@ -440,11 +454,11 @@ export class MapService {
         // Broad fallbacks if still not found
         if (!priceMap) {
           if (row.code_tfv.startsWith('FF1')) {
-            priceMap = this.priceMapping.find(m => m.code_tfv === 'FF1G-') || { price_eur_m3: 125 };
+            priceMap = this.priceMapping.find(m => m.code_tfv === 'FF1G-') || { price_eur_m3: 125 } as PriceMappingItem;
           } else if (row.code_tfv.startsWith('FF2')) {
-            priceMap = this.priceMapping.find(m => m.code_tfv === 'FF2G-') || { price_eur_m3: 60 };
+            priceMap = this.priceMapping.find(m => m.code_tfv === 'FF2G-') || { price_eur_m3: 60 } as PriceMappingItem;
           } else if (row.code_tfv.startsWith('FF')) {
-            priceMap = this.priceMapping.find(m => m.code_tfv === 'FM-') || { price_eur_m3: 90 };
+            priceMap = this.priceMapping.find(m => m.code_tfv === 'FM-') || { price_eur_m3: 90 } as PriceMappingItem;
           }
         }
       }
@@ -458,9 +472,9 @@ export class MapService {
     });
 
     // 2. Parallel Raster Analysis
-    let rasterStats: any = null;
-    let forestChange: any = null;
-    let lidar: any = null;
+    let rasterStats: Record<string, any> | null = null;
+    let forestChange: Record<string, any> | null = null;
+    let lidar: Record<string, any> | null = null;
 
     const [rStats, fChange, lStats] = await Promise.all([
       this.rasterService.getFormsStats(polygonGeometry),

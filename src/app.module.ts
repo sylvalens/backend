@@ -2,11 +2,11 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HealthController } from './health.controller';
-import { AdminModule } from './admin/admin.module';
-import { UsersModule } from './users/users.module';
-import { AuthModule } from './auth/auth.module';
-import { MapModule } from './map/map.module';
-import { RasterModule } from './raster/raster.module';
+import { AdminModule } from './modules/admin/admin.module';
+import { UsersModule } from './modules/users/users.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { MapModule } from './modules/map/map.module';
+import { RasterModule } from './modules/raster/raster.module';
 
 @Module({
   imports: [
