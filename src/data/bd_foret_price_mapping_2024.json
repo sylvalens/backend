@@ -1,0 +1,123 @@
+[
+  {
+    "code_tfv": "FF1G01-01",
+    "bd_foret_label": "Chênes décidus purs",
+    "tfv_g11_label": "Chênaie pure",
+    "fbf_essence": "Chêne",
+    "price_eur_m3": 228
+  },
+  {
+    "code_tfv": "FF1G06-06",
+    "bd_foret_label": "Chênes sempervirents purs",
+    "tfv_g11_label": "Chênaie sempervirente pure",
+    "fbf_essence": "Chêne vert / Chêne liège",
+    "price_eur_m3": 80,
+    "note": "Lower-quality timber than deciduous oaks; no direct source price — estimated at ~80 €/m³. Not relevant in Grand Est."
+  },
+  {
+    "code_tfv": "FF1-09-09",
+    "bd_foret_label": "Hêtre pur",
+    "tfv_g11_label": "Hêtraie pure",
+    "fbf_essence": "Hêtre",
+    "price_eur_m3": 56
+  },
+  {
+    "code_tfv": "FF1-10-10",
+    "bd_foret_label": "Châtaignier pur",
+    "tfv_g11_label": "Châtaigneraie pure",
+    "fbf_essence": "Châtaignier",
+    "price_eur_m3": 119
+  },
+  {
+    "code_tfv": "FF1-11-11",
+    "bd_foret_label": "Robinier pur",
+    "tfv_g11_label": "Robineraie pure",
+    "fbf_essence": "Robinier faux-acacia",
+    "price_eur_m3": 70,
+    "note": "Specialty hardwood with niche market; not in source JSON. Estimated ~70 €/m³ based on 'Autres feuillus' proxy. Verify locally."
+  },
+  {
+    "code_tfv": "FF1-49-49",
+    "bd_foret_label": "Autres feuillus purs",
+    "tfv_g11_label": "Autres peuplements feuillus purs",
+    "fbf_essence": "Essences diverses (Bouleau, Charme, Frêne)",
+    "price_eur_m3": 90,
+    "note": "Conservative average; prevents overvaluing cheap wood with premium Frêne prices."
+  },
+  {
+    "code_tfv": "FP",
+    "bd_foret_label": "Peupleraie",
+    "tfv_g11_label": "Peupleraie",
+    "fbf_essence": "Peuplier",
+    "price_eur_m3": 73
+  },
+  {
+    "code_tfv": "FF2-64-64",
+    "bd_foret_label": "Douglas pur",
+    "tfv_g11_label": "Douglaseraie pure",
+    "fbf_essence": "Douglas",
+    "price_eur_m3": 89
+  },
+  {
+    "code_tfv": "FF2G61-61",
+    "bd_foret_label": "Sapin ou épicéa pur",
+    "tfv_g11_label": "Sapinière ou pessière pure",
+    "fbf_essence": "Moyenne Sapin/Épicéa",
+    "price_eur_m3": 53,
+    "note": "Averaged from Épicéa commun (54), Épicéa Sitka (59), and Sapin pectiné (47) — BD Forêt merges all three."
+  },
+  {
+    "code_tfv": "FF2-51-51",
+    "bd_foret_label": "Pin maritime pur",
+    "tfv_g11_label": "Pinède pure",
+    "fbf_essence": "Pin maritime",
+    "price_eur_m3": 56
+  },
+  {
+    "code_tfv": "FF2G53-53",
+    "bd_foret_label": "Pin laricio ou pin noir pur",
+    "tfv_g11_label": "Pinède pure",
+    "fbf_essence": "Moyenne Laricio/Noir",
+    "price_eur_m3": 34,
+    "note": "Simple average of Pin laricio (40) and Pin noir midpoint (27.5) = 33.75, rounded to 34 €/m³."
+  },
+  {
+    "code_tfv": "FF2-52-52",
+    "bd_foret_label": "Pin sylvestre pur",
+    "tfv_g11_label": "Pinède pure",
+    "fbf_essence": "Pin sylvestre",
+    "price_eur_m3": 36
+  },
+  {
+    "code_tfv": "FF2G55-55",
+    "bd_foret_label": "Autres conifères purs",
+    "tfv_g11_label": "Autres peuplements résineux purs",
+    "fbf_essence": "Autres résineux (Mélèze, Pin d'Alep…)",
+    "price_eur_m3": 53,
+    "note": "No source price; Sapin/Épicéa average used as proxy for this catch-all conifer category."
+  },
+  {
+    "code_tfv": "FF1G-",
+    "bd_foret_label": "Mélange de feuillus",
+    "tfv_g11_label": "Mélange de feuillus",
+    "fbf_essence": "Mixte à dominante feuillue",
+    "price_eur_m3": 125,
+    "note": "Slightly conservative weighted average (Chêne 40%, Hêtre 30%, others 10% each = ~136); rounded down to 125 for prudence."
+  },
+  {
+    "code_tfv": "FF2G-",
+    "bd_foret_label": "Mélange de résineux",
+    "tfv_g11_label": "Mélange de résineux",
+    "fbf_essence": "Mixte à dominante résineuse",
+    "price_eur_m3": 60,
+    "note": "Above unweighted species avg (53 €/m³); Douglas-weighted assumption justified as France's most planted resinous species."
+  },
+  {
+    "code_tfv": "FM-",
+    "bd_foret_label": "Mélange feuillus et résineux",
+    "tfv_g11_label": "Mélange feuillus-résineux",
+    "fbf_essence": "Toutes essences confondues",
+    "price_eur_m3": 90,
+    "note": "True neutral fallback for highly mixed stands; midpoint between resinous (60) and feuillus (125) averages."
+  }
+]
