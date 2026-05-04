@@ -74,7 +74,8 @@ export class AuthController {
 
   @Put('me/map-state')
   @UseGuards(AuthGuard)
-  async saveMyMapState(@CurrentUser() user: User,
+  async saveMyMapState(
+    @CurrentUser() user: User,
     @Body() body: Record<string, unknown>,
   ) {
     await this.authService.updateUserMapState(user.id, body);

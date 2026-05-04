@@ -1,6 +1,12 @@
-import { Controller, Post, Body, Query, UseGuards, Get, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Query,
+  Get,
+  BadRequestException,
+} from '@nestjs/common';
 import { RasterService } from './raster.service';
-import { AuthGuard } from '../auth/auth.guard';
 import { GeoJsonObject } from 'geojson';
 
 @Controller('map/raster')
@@ -13,7 +19,10 @@ export class RasterController {
   }
 
   @Post('forms-stats')
-  async getFormsStats(@Body() body: { geometry: GeoJsonObject }, @Query('year') year?: number) {
+  async getFormsStats(
+    @Body() body: { geometry: GeoJsonObject },
+    @Query('year') year?: number,
+  ) {
     return this.rasterService.getFormsStats(body.geometry, year);
   }
 
@@ -44,7 +53,9 @@ export class RasterController {
     if (year !== undefined) {
       const parsedYear = Number(year);
       if (isNaN(parsedYear) || parsedYear < 2000 || parsedYear > 2050) {
-        throw new BadRequestException('year must be a valid number between 2000 and 2050');
+        throw new BadRequestException(
+          'year must be a valid number between 2000 and 2050',
+        );
       }
       return this.rasterService.getForestLossPixels(body.geometry, parsedYear);
     }

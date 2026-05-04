@@ -5,7 +5,6 @@ import { AuthController } from './auth.controller';
 import { AuthGuard } from './auth.guard';
 import { Module, forwardRef } from '@nestjs/common';
 
-
 @Module({
   imports: [ConfigModule, forwardRef(() => UsersModule)],
   providers: [AuthService, AuthGuard],

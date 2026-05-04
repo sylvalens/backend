@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, Query, Res, BadRequestException } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Res,
+  BadRequestException,
+} from '@nestjs/common';
 import type { Response as ExpressResponse } from 'express';
 import { MapService } from './map.service';
 import { PolygonStatsDto } from './dto/polygon-stats.dto';
@@ -33,15 +42,15 @@ export class MapController {
     @Param('z') z: string,
     @Param('x') x: string,
     @Param('y') y: string,
-    @Res() res: ExpressResponse
+    @Res() res: ExpressResponse,
   ) {
     const tile = await this.mapService.getMvtTile(
       layer,
       parseInt(z, 10),
       parseInt(x, 10),
-      parseInt(y, 10)
+      parseInt(y, 10),
     );
-    
+
     if (!tile) {
       res.status(204).send(); // No content
       return;
@@ -55,12 +64,11 @@ export class MapController {
   }
 
   @Get('admin-bbox')
-  async getAdminBbox(
-    @Query('level') level?: string,
-    @Query('id') id?: string,
-  ) {
+  async getAdminBbox(@Query('level') level?: string, @Query('id') id?: string) {
     if (!level || !id) {
-      throw new BadRequestException('level and id query parameters are required');
+      throw new BadRequestException(
+        'level and id query parameters are required',
+      );
     }
     return this.mapService.getAdminBbox(level, id);
   }
@@ -96,12 +104,11 @@ export class MapController {
   }
 
   @Get('admin-stats')
-  async getAdminStats(
-    @Query('level') level: string,
-    @Query('id') id: string,
-  ) {
+  async getAdminStats(@Query('level') level: string, @Query('id') id: string) {
     if (!level || !id) {
-      throw new BadRequestException('level and id query parameters are required');
+      throw new BadRequestException(
+        'level and id query parameters are required',
+      );
     }
     return this.mapService.getAdminStats(level, id);
   }

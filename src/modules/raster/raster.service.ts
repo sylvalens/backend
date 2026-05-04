@@ -9,13 +9,19 @@ export class RasterService {
   private readonly lidarTimeoutMs: number;
 
   constructor(private configService: ConfigService) {
-    this.rasterServiceUrl = this.configService.get<string>('RASTER_SERVICE_URL') || 'http://localhost:8000';
+    this.rasterServiceUrl =
+      this.configService.get<string>('RASTER_SERVICE_URL') ||
+      'http://localhost:8000';
     this.defaultTimeoutMs = this.getTimeoutMs('RASTER_TIMEOUT_MS', 15000);
     this.lidarTimeoutMs = this.getTimeoutMs('RASTER_LIDAR_TIMEOUT_MS', 90000);
   }
 
   async getFormsStats(geometry: GeoJsonObject, year: number = 2024) {
-    return this.proxyPost('/raster/forms-stats', { geometry }, { year: year.toString() });
+    return this.proxyPost(
+      '/raster/forms-stats',
+      { geometry },
+      { year: year.toString() },
+    );
   }
 
   async getFormsHeightGrid(
@@ -43,12 +49,19 @@ export class RasterService {
   }
 
   async getForestLossPixels(geometry: GeoJsonObject, year?: number) {
-    const url = year ? `/raster/forest-loss-pixels?year=${year}` : '/raster/forest-loss-pixels';
+    const url = year
+      ? `/raster/forest-loss-pixels?year=${year}`
+      : '/raster/forest-loss-pixels';
     return this.proxyPost(url, { geometry });
   }
 
   async getLidarStats(geometry: GeoJsonObject) {
-    return this.proxyPost('/raster/lidar-stats', { geometry }, {}, this.lidarTimeoutMs);
+    return this.proxyPost(
+      '/raster/lidar-stats',
+      { geometry },
+      {},
+      this.lidarTimeoutMs,
+    );
   }
 
   async getLidarCoverage() {
@@ -61,7 +74,9 @@ export class RasterService {
     timeoutMs: number = this.defaultTimeoutMs,
   ) {
     const url = new URL(`${this.rasterServiceUrl}${path}`);
-    Object.entries(queryParams).forEach(([key, val]) => url.searchParams.append(key, val));
+    Object.entries(queryParams).forEach(([key, val]) =>
+      url.searchParams.append(key, val),
+    );
 
     try {
       const response = await fetch(url.toString(), {
@@ -95,7 +110,9 @@ export class RasterService {
     timeoutMs: number = this.defaultTimeoutMs,
   ) {
     const url = new URL(`${this.rasterServiceUrl}${path}`);
-    Object.entries(queryParams).forEach(([key, val]) => url.searchParams.append(key, val));
+    Object.entries(queryParams).forEach(([key, val]) =>
+      url.searchParams.append(key, val),
+    );
 
     try {
       const response = await fetch(url.toString(), {

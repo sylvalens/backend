@@ -34,12 +34,10 @@ export class AdminService {
     });
   }
 
-  async findCommunesByDepartment(
-    departmentCode: string,
-  ): Promise<Commune[]> {
+  async findCommunesByDepartment(departmentCode: string): Promise<Commune[]> {
     return this.communeRepo
       .createQueryBuilder('c')
-      .where("LEFT(c.id, 2) = :deptCode", { deptCode: departmentCode })
+      .where('LEFT(c.id, 2) = :deptCode', { deptCode: departmentCode })
       .orderBy('c.name', 'ASC')
       .getMany();
   }

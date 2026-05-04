@@ -3,7 +3,6 @@ import { AdminService } from './admin.service';
 import { AdminRegion } from './entities/admin-region.entity';
 import { AdminDepartment } from './entities/admin-department.entity';
 import { Commune } from './entities/commune.entity';
-import { LieuDit } from './entities/lieu-dit.entity';
 
 @Controller('admin')
 export class AdminController {
@@ -62,8 +61,12 @@ export class AdminController {
     ]);
 
     return {
-      communes: communes.map(c => ({ id: c.id, name: c.name })),
-      lieuxDits: lieuxDits.map(ld => ({ id: ld.id, name: ld.name, communeId: ld.communeId })),
+      communes: communes.map((c) => ({ id: c.id, name: c.name })),
+      lieuxDits: lieuxDits.map((ld) => ({
+        id: ld.id,
+        name: ld.name,
+        communeId: ld.communeId,
+      })),
     };
   }
 }

@@ -44,7 +44,13 @@ export class MapService {
 
   private loadPriceMapping() {
     try {
-      const filePath = path.join(__dirname, '..', '..', 'data', 'bd_foret_price_mapping_2024.json');
+      const filePath = path.join(
+        __dirname,
+        '..',
+        '..',
+        'data',
+        'bd_foret_price_mapping_2024.json',
+      );
       if (fs.existsSync(filePath)) {
         this.priceMapping = JSON.parse(fs.readFileSync(filePath, 'utf8'));
       }
@@ -117,18 +123,45 @@ export class MapService {
     };
   }
 
-  async getMvtTile(layer: string, z: number, x: number, y: number): Promise<Buffer | null> {
+  async getMvtTile(
+    layer: string,
+    z: number,
+    x: number,
+    y: number,
+  ): Promise<Buffer | null> {
     const cacheKey = `${layer}:${z}:${x}:${y}`;
     if (this.tileCache.has(cacheKey)) {
       return this.tileCache.get(cacheKey)!;
     }
 
-    const layerMap: Record<string, { table: string, properties: Record<string, string> }> = {
-      'regions': { table: 'admin_regions', properties: { codeInsee: 'code_insee', nomOfficiel: 'nom_officiel' } },
-      'departments': { table: 'admin_departments', properties: { codeInsee: 'code_insee', nomOfficiel: 'nom_officiel', parentId: 'code_insee_de_la_region' } },
-      'communes': { table: 'cad_communes', properties: { codeInsee: 'id', nomOfficiel: 'nom' } },
-      'forests': { table: 'forest_formation', properties: { id: 'id', tfvG11: 'tfv_g11' } },
-      'parcels': { table: 'cad_parcelles', properties: { id: 'ogc_fid', commune: 'commune' } },
+    const layerMap: Record<
+      string,
+      { table: string; properties: Record<string, string> }
+    > = {
+      regions: {
+        table: 'admin_regions',
+        properties: { codeInsee: 'code_insee', nomOfficiel: 'nom_officiel' },
+      },
+      departments: {
+        table: 'admin_departments',
+        properties: {
+          codeInsee: 'code_insee',
+          nomOfficiel: 'nom_officiel',
+          parentId: 'code_insee_de_la_region',
+        },
+      },
+      communes: {
+        table: 'cad_communes',
+        properties: { codeInsee: 'id', nomOfficiel: 'nom' },
+      },
+      forests: {
+        table: 'forest_formation',
+        properties: { id: 'id', tfvG11: 'tfv_g11' },
+      },
+      parcels: {
+        table: 'cad_parcelles',
+        properties: { id: 'ogc_fid', commune: 'commune' },
+      },
     };
 
     const l = layerMap[layer];
@@ -159,7 +192,7 @@ export class MapService {
     let tile = null;
     if (rows && rows[0] && rows[0].tile) {
       tile = rows[0].tile;
-      
+
       // Simple LRU: remove oldest if over limit
       if (this.tileCache.size > 5000) {
         const firstKey = this.tileCache.keys().next().value;
@@ -167,7 +200,7 @@ export class MapService {
       }
       this.tileCache.set(cacheKey, tile);
     }
-    
+
     return tile;
   }
 
@@ -175,11 +208,14 @@ export class MapService {
     let tableName = '';
     let idColumn = '';
     if (level === 'region') {
-      tableName = 'admin_regions'; idColumn = 'code_insee';
+      tableName = 'admin_regions';
+      idColumn = 'code_insee';
     } else if (level === 'department') {
-      tableName = 'admin_departments'; idColumn = 'code_insee';
+      tableName = 'admin_departments';
+      idColumn = 'code_insee';
     } else if (level === 'commune') {
-      tableName = 'cad_communes'; idColumn = 'id';
+      tableName = 'cad_communes';
+      idColumn = 'id';
     } else {
       throw new BadRequestException('Invalid level');
     }
@@ -191,7 +227,7 @@ export class MapService {
     `;
     const rows = await this.dataSource.query(sql, [id]);
     if (!rows || !rows[0] || !rows[0].bbox) return null;
-    
+
     const geom = JSON.parse(rows[0].bbox);
     const coords = geom.coordinates[0];
     const minX = coords[0][0];
@@ -274,7 +310,7 @@ export class MapService {
       })),
     };
   }
-  
+
   async getDepartmentsCoverage() {
     if (this.departmentsCoverageCache) return this.departmentsCoverageCache;
 
@@ -289,7 +325,7 @@ export class MapService {
       ORDER BY code_insee;
     `;
     const rows = await this.dataSource.query(sql);
-    
+
     this.departmentsCoverageCache = {
       type: 'FeatureCollection',
       features: rows.map((row: Record<string, any>) => ({
@@ -322,8 +358,8 @@ export class MapService {
     const rows = await this.dataSource.query(sql);
 
     this.forestClassesCache = rows.map((row: Record<string, any>) => ({
-        code: String(row.tfv_g11),
-        label: row.tfv_label || `Group ${row.tfv_g11}`,
+      code: String(row.tfv_g11),
+      label: row.tfv_label || `Group ${row.tfv_g11}`,
     }));
     return this.forestClassesCache;
   }
@@ -359,8 +395,8 @@ export class MapService {
       WHERE ${idColumn} = $1
     `;
 
-    // Try treating ID as string, but if level is lieu-dit and ID is a number, we might need to parse it. 
-    // TypeORM parameterization handles string/number conversion nicely if the driver knows. 
+    // Try treating ID as string, but if level is lieu-dit and ID is a number, we might need to parse it.
+    // TypeORM parameterization handles string/number conversion nicely if the driver knows.
     // In postgres it will cast implicitly if possible. If not, we can safely just pass string.
     const rows = await this.dataSource.query(sql, [id]);
     if (!rows.length) {
@@ -427,8 +463,10 @@ export class MapService {
         ? Number(areaRows[0].hectares)
         : 0;
 
-    const parcelIds = parcelRows.map((row: Record<string, any>) => row.parcel_id);
-    
+    const parcelIds = parcelRows.map(
+      (row: Record<string, any>) => row.parcel_id,
+    );
+
     // Total forest area within the polygon (may be less than areaHa if polygon includes non-forest)
     let totalForestAreaHa = 0;
     const treeSpecies: Array<{
@@ -436,40 +474,54 @@ export class MapService {
       codeTfv: string | null;
       areaHa: number;
       priceEurM3: number | null;
-    }> = speciesRows.map((row: { species: string | null; code_tfv: string | null; hectares: number | string }) => {
-      const area = row.hectares != null ? Number(row.hectares) : 0;
-      totalForestAreaHa += area;
-      
-      // Lookup price with improved fallback logic
-      let priceMap = this.priceMapping.find(m => m.code_tfv === row.code_tfv);
-      
-      if (!priceMap && row.code_tfv) {
-        // Try prefixes (e.g., FF1-00-00 -> FF1-00 -> FF1)
-        const parts = row.code_tfv.split('-');
-        if (parts.length > 1) {
-          const prefix = parts[0] + '-'; // e.g., FF1-
-          priceMap = this.priceMapping.find(m => m.code_tfv === prefix);
-        }
-        
-        // Broad fallbacks if still not found
-        if (!priceMap) {
-          if (row.code_tfv.startsWith('FF1')) {
-            priceMap = this.priceMapping.find(m => m.code_tfv === 'FF1G-') || { price_eur_m3: 125 } as PriceMappingItem;
-          } else if (row.code_tfv.startsWith('FF2')) {
-            priceMap = this.priceMapping.find(m => m.code_tfv === 'FF2G-') || { price_eur_m3: 60 } as PriceMappingItem;
-          } else if (row.code_tfv.startsWith('FF')) {
-            priceMap = this.priceMapping.find(m => m.code_tfv === 'FM-') || { price_eur_m3: 90 } as PriceMappingItem;
+    }> = speciesRows.map(
+      (row: {
+        species: string | null;
+        code_tfv: string | null;
+        hectares: number | string;
+      }) => {
+        const area = row.hectares != null ? Number(row.hectares) : 0;
+        totalForestAreaHa += area;
+
+        // Lookup price with improved fallback logic
+        let priceMap = this.priceMapping.find(
+          (m) => m.code_tfv === row.code_tfv,
+        );
+
+        if (!priceMap && row.code_tfv) {
+          // Try prefixes (e.g., FF1-00-00 -> FF1-00 -> FF1)
+          const parts = row.code_tfv.split('-');
+          if (parts.length > 1) {
+            const prefix = parts[0] + '-'; // e.g., FF1-
+            priceMap = this.priceMapping.find((m) => m.code_tfv === prefix);
+          }
+
+          // Broad fallbacks if still not found
+          if (!priceMap) {
+            if (row.code_tfv.startsWith('FF1')) {
+              priceMap =
+                this.priceMapping.find((m) => m.code_tfv === 'FF1G-') ||
+                ({ price_eur_m3: 125 } as PriceMappingItem);
+            } else if (row.code_tfv.startsWith('FF2')) {
+              priceMap =
+                this.priceMapping.find((m) => m.code_tfv === 'FF2G-') ||
+                ({ price_eur_m3: 60 } as PriceMappingItem);
+            } else if (row.code_tfv.startsWith('FF')) {
+              priceMap =
+                this.priceMapping.find((m) => m.code_tfv === 'FM-') ||
+                ({ price_eur_m3: 90 } as PriceMappingItem);
+            }
           }
         }
-      }
-      
-      return {
-        species: row.species ?? 'Unknown',
-        codeTfv: row.code_tfv,
-        areaHa: area,
-        priceEurM3: priceMap ? priceMap.price_eur_m3 : null
-      };
-    });
+
+        return {
+          species: row.species ?? 'Unknown',
+          codeTfv: row.code_tfv,
+          areaHa: area,
+          priceEurM3: priceMap ? priceMap.price_eur_m3 : null,
+        };
+      },
+    );
 
     // 2. Parallel Raster Analysis
     let rasterStats: Record<string, any> | null = null;
@@ -479,7 +531,7 @@ export class MapService {
     const [rStats, fChange, lStats] = await Promise.all([
       this.rasterService.getFormsStats(polygonGeometry),
       this.rasterService.getForestChange(polygonGeometry),
-      this.rasterService.getLidarStats(polygonGeometry)
+      this.rasterService.getLidarStats(polygonGeometry),
     ]);
     rasterStats = rStats;
     forestChange = fChange;
@@ -493,11 +545,11 @@ export class MapService {
     if (rasterStats && rasterStats.wvd) {
       // WVD is in m3/ha. We use total forest area for volume.
       standingVolumeM3 = rasterStats.wvd.mean * totalForestAreaHa;
-      
+
       // Value calculation: sum(species_area * WVD_mean * species_price)
       treeSpecies.forEach((s) => {
         if (s.priceEurM3) {
-          estimatedValueEur += s.areaHa * rasterStats!.wvd!.mean * s.priceEurM3;
+          estimatedValueEur += s.areaHa * rasterStats.wvd!.mean * s.priceEurM3;
         }
       });
     }
@@ -508,7 +560,10 @@ export class MapService {
       // FF1 = Broadleaf, FF2 = Conifer
       let totalWeightedBef = 0;
       treeSpecies.forEach((s) => {
-        const bef = (s.codeTfv?.startsWith('FF2') || s.codeTfv?.startsWith('FF5')) ? 1.2 : 1.3;
+        const bef =
+          s.codeTfv?.startsWith('FF2') || s.codeTfv?.startsWith('FF5')
+            ? 1.2
+            : 1.3;
         totalWeightedBef += (s.areaHa / (totalForestAreaHa || 1)) * bef;
       });
       if (totalWeightedBef === 0) totalWeightedBef = 1.25;
@@ -516,9 +571,14 @@ export class MapService {
       const agbdMg = rasterStats.agbd.mean * totalForestAreaHa;
       const rootRatio = 0.24;
       const carbonFraction = 0.47;
-      const co2Factor = 44/12;
-      
-      carbonStockTCO2e = agbdMg * totalWeightedBef * (1 + rootRatio) * carbonFraction * co2Factor;
+      const co2Factor = 44 / 12;
+
+      carbonStockTCO2e =
+        agbdMg *
+        totalWeightedBef *
+        (1 + rootRatio) *
+        carbonFraction *
+        co2Factor;
     }
 
     return {
@@ -531,7 +591,7 @@ export class MapService {
       lidar,
       standingVolumeM3,
       estimatedValueEur,
-      carbonStockTCO2e
+      carbonStockTCO2e,
     };
   }
 
@@ -558,7 +618,7 @@ export class MapService {
     const geom = geometry as Geometry;
     if (!geom?.type) return null;
     if (geom.type === 'Polygon' || geom.type === 'MultiPolygon') {
-      return geom as Polygon | MultiPolygon;
+      return geom;
     }
 
     return null;

@@ -83,12 +83,17 @@ export class AuthService {
 
   // ---------- Map state helpers ----------
 
-  async getUserMapState(userId: string): Promise<Record<string, unknown> | null> {
+  async getUserMapState(
+    userId: string,
+  ): Promise<Record<string, unknown> | null> {
     const user = await this.usersService.findById(userId);
     return user?.lastMapState || null;
   }
 
-  async updateUserMapState(userId: string, state: Record<string, unknown>): Promise<void> {
+  async updateUserMapState(
+    userId: string,
+    state: Record<string, unknown>,
+  ): Promise<void> {
     await this.usersService.updateUser(userId, { lastMapState: state });
   }
 }
