@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryColumn } from 'typeorm';
+import { Column, Entity, PrimaryColumn, Index } from 'typeorm';
 import type { Geometry } from 'geojson';
 
 @Entity({ name: 'admin_regions' })
@@ -10,6 +10,7 @@ export class AdminRegion {
   @Column({ name: 'nom_officiel', type: 'varchar' })
   nomOfficiel: string;
 
+  @Index({ spatial: true })
   @Column({
     name: 'geom',
     type: 'geometry',

@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryColumn } from 'typeorm';
+import { Column, Entity, PrimaryColumn, Index } from 'typeorm';
 import type { Geometry } from 'geojson';
 
 @Entity({ name: 'cad_communes' })
@@ -9,6 +9,7 @@ export class Commune {
   @Column({ name: 'nom', type: 'varchar' })
   name: string;
 
+  @Index({ spatial: true })
   @Column({
     name: 'geom',
     type: 'geometry',

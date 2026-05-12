@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryColumn } from 'typeorm';
+import { Column, Entity, PrimaryColumn, Index } from 'typeorm';
 import type { Geometry } from 'geojson';
 
 @Entity({ name: 'cad_lieux_dits' })
@@ -11,9 +11,11 @@ export class LieuDit {
   name: string;
 
   // Commune ID like "68001"
+  @Index()
   @Column({ name: 'commune', type: 'varchar' })
   communeId: string;
 
+  @Index({ spatial: true })
   @Column({
     name: 'geom',
     type: 'geometry',
