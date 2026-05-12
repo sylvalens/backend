@@ -3,32 +3,86 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 export class Migration1778548657226 implements MigrationInterface {
   name = 'Migration1778548657226';
 
+  private async dropDeptForestCoverage(
+    queryRunner: QueryRunner,
+  ): Promise<void> {
+    await queryRunner.query(
+      `DROP VIEW IF EXISTS "public"."dept_forest_coverage"`,
+    );
+    await queryRunner.query(
+      `DROP MATERIALIZED VIEW IF EXISTS "public"."dept_forest_coverage"`,
+    );
+  }
+
+  private async createDeptForestCoverage(
+    queryRunner: QueryRunner,
+  ): Promise<void> {
+    await queryRunner.query(`
+      CREATE MATERIALIZED VIEW "public"."dept_forest_coverage" AS
+      SELECT
+        d.code_insee,
+        d.nom_officiel,
+        ROUND(COALESCE(SUM(ST_Area(ST_Intersection(d.geom, f.geom))) / 10000.0, 0)::numeric, 2) AS forest_area_ha,
+        ROUND(
+          CASE WHEN ST_Area(d.geom) = 0 THEN 0
+               ELSE (COALESCE(SUM(ST_Area(ST_Intersection(d.geom, f.geom))), 0) / ST_Area(d.geom) * 100)
+          END::numeric, 2
+        ) AS forest_pct,
+        ST_AsGeoJSON(
+          ST_SimplifyPreserveTopology(ST_Transform(d.geom, 4326), 0.001),
+          6
+        ) AS geom
+      FROM "public"."admin_departments" d
+      LEFT JOIN "public"."forest_formation" f ON ST_Intersects(d.geom, f.geom)
+      GROUP BY d.code_insee, d.nom_officiel, d.geom
+    `);
+    await queryRunner.query(
+      `CREATE UNIQUE INDEX IF NOT EXISTS "idx_dept_forest_coverage_code" ON "public"."dept_forest_coverage" ("code_insee")`,
+    );
+  }
+
   public async up(queryRunner: QueryRunner): Promise<void> {
+    await this.dropDeptForestCoverage(queryRunner);
+
     await queryRunner.query(
       `DROP INDEX IF EXISTS "public"."cad_lieux_dits_geom_geom_idx"`,
     );
-    await queryRunner.query(`DROP INDEX IF EXISTS "public"."cad_lieux_dits_geom_idx"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "public"."cad_lieux_dits_commune_idx"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "public"."cad_lieux_dits_geom_idx"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "public"."cad_lieux_dits_commune_idx"`,
+    );
     await queryRunner.query(
       `DROP INDEX IF EXISTS "public"."admin_regions_geom_geom_idx"`,
     );
-    await queryRunner.query(`DROP INDEX IF EXISTS "public"."admin_regions_geom_idx"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "public"."admin_regions_geom_idx"`,
+    );
     await queryRunner.query(
       `DROP INDEX IF EXISTS "public"."admin_regions_code_insee_idx"`,
     );
     await queryRunner.query(
       `DROP INDEX IF EXISTS "public"."admin_departments_geom_geom_idx"`,
     );
-    await queryRunner.query(`DROP INDEX IF EXISTS "public"."admin_departments_geom_idx"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "public"."admin_departments_geom_idx"`,
+    );
     await queryRunner.query(
       `DROP INDEX IF EXISTS "public"."admin_departments_code_insee_idx"`,
     );
     await queryRunner.query(
       `DROP INDEX IF EXISTS "public"."admin_departments_code_insee_de_la_region_idx"`,
     );
-    await queryRunner.query(`DROP INDEX IF EXISTS "public"."cad_communes_geom_geom_idx"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "public"."cad_communes_geom_idx"`);
-    await queryRunner.query(`DROP INDEX IF EXISTS "public"."cad_communes_id_idx"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "public"."cad_communes_geom_geom_idx"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "public"."cad_communes_geom_idx"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "public"."cad_communes_id_idx"`,
+    );
     await queryRunner.query(
       `CREATE TABLE IF NOT EXISTS "users" ("id" uuid NOT NULL, "email" character varying(255) NOT NULL, "password_hash" character varying(255) NOT NULL, "display_name" character varying(255), "lastMapState" jsonb, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`,
     );
@@ -53,13 +107,21 @@ export class Migration1778548657226 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "cad_communes" DROP CONSTRAINT IF EXISTS "cad_communes_pkey"`,
     );
-    await queryRunner.query(`ALTER TABLE "cad_communes" DROP COLUMN IF EXISTS "ogc_fid"`);
-    await queryRunner.query(`ALTER TABLE "cad_communes" DROP COLUMN IF EXISTS "created"`);
-    await queryRunner.query(`ALTER TABLE "cad_communes" DROP COLUMN IF EXISTS "updated"`);
+    await queryRunner.query(
+      `ALTER TABLE "cad_communes" DROP COLUMN IF EXISTS "ogc_fid"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "cad_communes" DROP COLUMN IF EXISTS "created"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "cad_communes" DROP COLUMN IF EXISTS "updated"`,
+    );
     await queryRunner.query(
       `ALTER TABLE "cad_lieux_dits" ALTER COLUMN "ogc_fid" DROP DEFAULT`,
     );
-    await queryRunner.query(`DROP SEQUENCE IF EXISTS "cad_lieux_dits_ogc_fid_seq"`);
+    await queryRunner.query(
+      `DROP SEQUENCE IF EXISTS "cad_lieux_dits_ogc_fid_seq"`,
+    );
     await queryRunner.query(
       `ALTER TABLE "cad_lieux_dits" ALTER COLUMN "nom" SET NOT NULL`,
     );
@@ -126,9 +188,13 @@ export class Migration1778548657226 implements MigrationInterface {
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "IDX_e2c06ce379b1f6ceb382f8b2f3" ON "cad_communes" USING GiST ("geom") `,
     );
+
+    await this.createDeptForestCoverage(queryRunner);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await this.dropDeptForestCoverage(queryRunner);
+
     await queryRunner.query(
       `DROP INDEX IF EXISTS "public"."IDX_e2c06ce379b1f6ceb382f8b2f3"`,
     );
@@ -263,5 +329,7 @@ export class Migration1778548657226 implements MigrationInterface {
     await queryRunner.query(
       `CREATE INDEX IF NOT EXISTS "cad_lieux_dits_geom_geom_idx" ON "cad_lieux_dits" USING GiST ("geom") `,
     );
+
+    await this.createDeptForestCoverage(queryRunner);
   }
 }
