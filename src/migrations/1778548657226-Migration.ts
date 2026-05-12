@@ -7,9 +7,6 @@ export class Migration1778548657226 implements MigrationInterface {
     queryRunner: QueryRunner,
   ): Promise<void> {
     await queryRunner.query(
-      `DROP VIEW IF EXISTS "public"."dept_forest_coverage"`,
-    );
-    await queryRunner.query(
       `DROP MATERIALIZED VIEW IF EXISTS "public"."dept_forest_coverage"`,
     );
   }
