@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { TerminusModule } from '@nestjs/terminus';
 import { HealthController } from './health.controller';
 import { AdminModule } from './modules/admin/admin.module';
 import { UsersModule } from './modules/users/users.module';
@@ -24,6 +25,7 @@ import { RasterModule } from './modules/raster/raster.module';
         synchronize: false, // <-- now OFF, we use the existing schema
       }),
     }),
+    TerminusModule,
     AdminModule,
     UsersModule,
     AuthModule,

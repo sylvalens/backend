@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   Param,
   Post,
   Query,
@@ -94,6 +95,7 @@ export class MapController {
   }
 
   @Get('departments-coverage')
+  @Header('Cache-Control', 'public, max-age=300, stale-while-revalidate=86400')
   async getDepartmentsCoverage() {
     return this.mapService.getDepartmentsCoverage();
   }

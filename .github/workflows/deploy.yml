@@ -1,0 +1,114 @@
+name: CI/CD — Backend
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  IMAGE_NAME: ghcr.io/sylvalens/backend
+
+jobs:
+  # ──────────────────────────────────────────────
+  # JOB 1: Build & push image to GHCR
+  # Runs on GitHub's servers — droplet not involved
+  # ──────────────────────────────────────────────
+  build:
+    name: Build & Push Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,format=long
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ github.ref == 'refs/heads/main' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Layer caching — first build ~3 min, subsequent ~30-60s
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ──────────────────────────────────────────────
+  # JOB 2: Deploy to droplet
+  # Only runs on main, after build succeeds
+  # ──────────────────────────────────────────────
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DROPLET_SSH_KEY }}
+
+      - name: Add droplet to known hosts
+        run: ssh-keyscan -H ${{ secrets.DROPLET_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy
+        env:
+          HOST: ${{ secrets.DROPLET_HOST }}
+          USER: ${{ secrets.DROPLET_USER }}
+        run: |
+          ssh $USER@$HOST bash -s << 'ENDSSH'
+            set -euo pipefail
+            cd /opt/sylvalens
+
+            echo "📥 Pulling latest backend image..."
+            # Explicitly set BACKEND_TAG=latest to override any manual rollback state
+            export BACKEND_TAG=latest
+            docker compose --env-file infra/.env.prod -f infra/docker-compose.prod.yml pull backend
+
+            echo "🚀 Swapping backend container (expect ~5-10s downtime while NestJS + migrations run)..."
+            docker compose --env-file infra/.env.prod -f infra/docker-compose.prod.yml up -d --no-deps --remove-orphans backend
+
+            echo "⏳ Waiting for Docker health check to report healthy..."
+            for i in $(seq 1 12); do
+              STATUS=$(docker inspect --format='{{.State.Health.Status}}' forest_backend_prod 2>/dev/null || echo "starting")
+              echo "  Attempt $i/12 — status: $STATUS"
+              if [ "$STATUS" = "healthy" ]; then
+                echo "✅ Backend is healthy. Running image cleanup..."
+
+                # Remove unused images older than 7 days
+                # Keeps ~1 week of rollback images cached; prevents disk exhaustion
+                docker image prune -a -f --filter "until=168h"
+
+                echo "🎉 Deploy complete."
+                exit 0
+              fi
+              sleep 5
+            done
+
+            echo "❌ Backend did not become healthy after 60s."
+            echo "   Check migration logs: docker logs forest_backend_prod --tail 100"
+            exit 1
+          ENDSSH
